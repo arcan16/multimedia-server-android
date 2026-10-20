@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group
+        android:id="@+id/groupMain"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/navCatalog"
+            android:icon="@drawable/ic_grid"
+            android:title="Catálogo" />
+        <item
+            android:id="@+id/navAccount"
+            android:icon="@drawable/ic_person"
+            android:title="Mi cuenta" />
+    </group>
+
+    <item
+        android:id="@+id/navAdminSection"
+        android:title="Administración">
+        <menu>
+            <group
+                android:id="@+id/groupAdmin"
+                android:checkableBehavior="single">
+                <item
+                    android:id="@+id/navContent"
+                    android:icon="@drawable/ic_movie"
+                    android:title="Contenido" />
+                <item
+                    android:id="@+id/navMultimedia"
+                    android:icon="@drawable/ic_upload"
+                    android:title="Episodios y vídeo" />
+                <item
+                    android:id="@+id/navGenres"
+                    android:icon="@drawable/ic_tag"
+                    android:title="Géneros" />
+                <item
+                    android:id="@+id/navUsers"
+                    android:icon="@drawable/ic_people"
+                    android:title="Usuarios" />
+            </group>
+        </menu>
+    </item>
+
+    <group android:id="@+id/groupSession">
+        <item
+            android:id="@+id/navLogout"
+            android:icon="@drawable/ic_logout"
+            android:title="Cerrar sesión" />
+    </group>
+</menu>

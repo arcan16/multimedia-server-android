@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.MultimediaServer" parent="Theme.MaterialComponents.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryVariant">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnSecondary">@color/on_accent</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text</item>
+        <item name="colorError">@color/danger</item>
+        <item name="colorControlNormal">@color/text_muted</item>
+        <item name="colorControlActivated">@color/accent</item>
+        <item name="android:colorBackground">@color/bg</item>
+        <item name="colorOnBackground">@color/text</item>
+        <item name="android:windowBackground">@color/bg</item>
+        <item name="android:statusBarColor">@color/bg</item>
+        <item name="android:navigationBarColor">@color/bg</item>
+        <item name="android:textColorPrimary">@color/text</item>
+        <item name="android:textColorSecondary">@color/text_muted</item>
+        <item name="android:textColorHint">@color/text_muted</item>
+        <item name="textInputStyle">@style/Widget.MS.TextInput</item>
+        <item name="materialButtonStyle">@style/Widget.MS.Button</item>
+        <item name="chipStyle">@style/Widget.MS.Chip</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.MS.Dialog</item>
+        <item name="shapeAppearanceSmallComponent">@style/Shape.MS.Control</item>
+        <item name="shapeAppearanceMediumComponent">@style/Shape.MS.Card</item>
+    </style>
+
+    <style name="Theme.MultimediaServer.Player">
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:statusBarColor">@color/black</item>
+    </style>
+
+    <style name="Shape.MS.Control" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_control</item>
+    </style>
+
+    <style name="Shape.MS.Card" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_card</item>
+    </style>
+
+    <style name="Shape.MS.Dialog" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_dialog</item>
+    </style>
+
+    <style name="ThemeOverlay.MS.Dialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="colorSurface">@color/surface_2</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="shapeAppearanceMediumComponent">@style/Shape.MS.Dialog</item>
+        <item name="buttonBarPositiveButtonStyle">@style/Widget.MS.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/Widget.MS.DialogButton.Muted</item>
+        <item name="textInputStyle">@style/Widget.MS.TextInput</item>
+    </style>
+</resources>

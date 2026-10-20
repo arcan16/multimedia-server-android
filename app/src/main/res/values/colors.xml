@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Design tokens, same values as Frontend/src/styles/tokens.css -->
+<resources>
+    <color name="bg">#0E1014</color>
+    <color name="surface">#161920</color>
+    <color name="surface_2">#1E222B</color>
+    <color name="border">#2B303B</color>
+    <color name="text">#ECEEF2</color>
+    <color name="text_2">#C9CED8</color>
+    <color name="text_muted">#A3ABB9</color>
+    <color name="accent">#F2A93B</color>
+    <color name="on_accent">#1B1306</color>
+    <color name="accent_tint">#2A2418</color>
+    <color name="danger">#E5675C</color>
+    <color name="danger_text">#FFB4AB</color>
+    <color name="danger_bg">#2A1714</color>
+    <color name="success_text">#A6E3B2</color>
+    <color name="success_bg">#142318</color>
+    <color name="info_text">#B9D3F5</color>
+    <color name="info_bg">#15202E</color>
+    <color name="black">#000000</color>
+    <color name="disabled_bg">#3A3528</color>
+    <color name="disabled_text">#7D7462</color>
+</resources>

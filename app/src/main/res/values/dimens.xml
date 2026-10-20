@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="page_padding">16dp</dimen>
+    <dimen name="radius_control">10dp</dimen>
+    <dimen name="radius_card">14dp</dimen>
+    <dimen name="radius_dialog">16dp</dimen>
+    <dimen name="touch">48dp</dimen>
+    <dimen name="gap">12dp</dimen>
+</resources>

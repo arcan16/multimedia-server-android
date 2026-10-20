@@ -1,0 +1,51 @@
+plugins {
+    alias(libs.plugins.android.application)
+}
+
+android {
+    namespace 'com.multimediaserver.android'
+    compileSdk {
+        version = release(37)
+    }
+
+    defaultConfig {
+        applicationId "com.multimediaserver.android"
+        minSdk 24
+        targetSdk 37
+        versionCode 1
+        versionName "1.0"
+
+        // Default server URL shown on the login screen. 10.0.2.2 is the host machine from the emulator.
+        // Override with -PapiUrl=http://192.168.1.10:8080 or change it on the login screen.
+        buildConfigField "String", "API_URL", "\"${project.findProperty('apiUrl') ?: 'http://10.0.2.2:8080'}\""
+    }
+
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+    }
+
+    buildTypes {
+        release {
+            optimization {
+                enable false
+            }
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation libs.appcompat
+    implementation libs.material
+    implementation libs.activity
+    implementation libs.constraintlayout
+    implementation libs.recyclerview
+    implementation libs.swiperefreshlayout
+    implementation libs.okhttp
+    implementation libs.gson
+    testImplementation libs.junit
+}
