@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>MultimediaServer Android</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!--
+  Navigable mockup of the Android client (Android/app). Same tokens as res/values/colors.xml.
+  ?screen=<id> opens a screen; &bare=1 renders only the phone (used to export docs/mockups/png/).
+-->
+<style>
+  :root {
+    --bg: #0E1014;
+    --surface: #161920;
+    --surface-2: #1E222B;
+    --border: #2B303B;
+    --text: #ECEEF2;
+    --text-2: #C9CED8;
+    --muted: #A3ABB9;
+    --accent: #F2A93B;
+    --on-accent: #1B1306;
+    --accent-tint: #2A2418;
+    --danger: #E5675C;
+    --danger-text: #FFB4AB;
+    --danger-bg: #2A1714;
+    --success-text: #A6E3B2;
+    --success-bg: #142318;
+    --info-text: #B9D3F5;
+    --info-bg: #15202E;
+    --r-control: 10px;
+    --r-card: 14px;
+    --r-dialog: 16px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #05060A;
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 32px 16px;
+  }
+  button, input, textarea { font-family: inherit; }
+
+  /* ---------- Page chrome (not part of the app) ---------- */
+  .index { width: 240px; flex-shrink: 0; }
+  .index h1 { font-size: 18px; margin: 0 0 4px; }
+  .index p { color: var(--muted); font-size: 13px; margin: 0 0 16px; line-height: 1.5; }
+  .index ol { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+  .index button {
+    width: 100%; text-align: left; min-height: 40px; padding: 8px 12px; border-radius: var(--r-control);
+    border: 1px solid transparent; background: none; color: var(--text-2); font-size: 14px; cursor: pointer;
+  }
+  .index button:hover { background: var(--surface); }
+  .index button[aria-current="true"] { background: var(--accent-tint); color: var(--accent); border-color: #4a3c22; }
+  .index small { display: block; color: var(--muted); font-size: 12px; }
+  @media (max-width: 760px) { body { flex-direction: column; align-items: center; } .index { width: 100%; max-width: 390px; } }
+
+  /* ---------- Phone ---------- */
+  .phone {
+    width: 390px; height: 844px; flex-shrink: 0;
+    background: var(--bg); border: 10px solid #000; border-radius: 44px;
+    overflow: hidden; position: relative; display: flex; flex-direction: column;
+    box-shadow: 0 0 0 1px #2a2d35, 0 30px 80px rgba(0,0,0,.6);
+  }
+  .statusbar {
+    height: 32px; min-height: 32px; padding: 0 20px; display: flex; align-items: center; justify-content: space-between;
+    font-size: 13px; font-weight: 600; color: var(--text); background: var(--bg); position: relative; z-index: 30;
+  }
+  .statusbar .icons { display: flex; gap: 6px; align-items: center; }
+  .statusbar svg { width: 16px; height: 16px; fill: var(--text); }
+  .gesture { height: 20px; min-height: 20px; display: flex; justify-content: center; align-items: center; background: var(--bg); z-index: 30; }
+  .gesture span { width: 108px; height: 4px; border-radius: 4px; background: #c9ced8; opacity: .7; }
+  .viewport { flex: 1; position: relative; overflow: hidden; }
+
+  body.bare { padding: 0; background: var(--bg); display: block; }
+  body.bare .index { display: none; }
+  body.bare .phone { border: 0; border-radius: 0; box-shadow: none; }
+
+  .screen { display: none; position: absolute; inset: 0; flex-direction: column; background: var(--bg); }
+  .screen.active { display: flex; }
+  .scroll { flex: 1; overflow-y: auto; padding: 16px; scrollbar-width: none; }
+  .scroll::-webkit-scrollbar { display: none; }
+
+  /* ---------- Toolbar ---------- */
+  .toolbar { height: 56px; min-height: 56px; display: flex; align-items: center; gap: 8px; padding: 0 4px; background: var(--bg); }
+  .toolbar .title { font-size: 20px; font-weight: 600; }
+  .toolbar .title.soft { font-size: 16px; font-weight: 500; color: var(--text-2); }
+  .icon-btn {
+    width: 48px; height: 48px; border-radius: 50%; border: 0; background: none; color: var(--text-2);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+  }
+  .icon-btn:hover { background: rgba(255,255,255,.05); }
+  .icon-btn.danger { color: var(--danger-text); }
+  .icon-btn:disabled { opacity: .35; cursor: default; }
+  svg.i { width: 22px; height: 22px; fill: currentColor; }
+
+  /* ---------- Text ---------- */
+  .subtitle { color: var(--muted); font-size: 14px; margin: 0 0 16px; line-height: 1.45; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .h1 { font-size: 28px; font-weight: 700; margin: 8px 0; line-height: 1.2; }
+  .card-title { font-size: 17px; font-weight: 700; margin: 0 0 12px; }
+  .label { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 16px 0 8px; }
+  .badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; padding: 3px 8px; border-radius: 6px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-2); }
+  .badge.accent { background: var(--accent-tint); border-color: transparent; color: var(--accent); }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    min-height: 48px; padding: 0 20px; border-radius: var(--r-control); border: 1px solid transparent;
+    font-size: 15px; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+    background: var(--accent); color: var(--on-accent);
+  }
+  .btn svg.i { width: 20px; height: 20px; }
+  .btn.block { width: 100%; }
+  .btn.lg { min-height: 56px; }
+  .btn.secondary { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+  .btn.ghost { background: none; color: var(--text-2); }
+  .btn.danger { background: none; color: var(--danger-text); border-color: var(--danger); }
+  .btn:disabled { background: #3A3528; color: #7D7462; cursor: default; }
+  .row { display: flex; gap: 8px; }
+  .row > * { flex: 1; }
+  .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+  /* ---------- Inputs (Material outlined) ---------- */
+  .field { position: relative; margin-top: 12px; }
+  .field:first-child { margin-top: 0; }
+  .field .box {
+    min-height: 56px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface);
+    display: flex; align-items: center; padding: 0 14px; gap: 10px; color: var(--text); font-size: 16px;
+  }
+  .field .box.focus { border: 2px solid var(--accent); padding: 0 13px; }
+  .field .box.error { border-color: var(--danger); }
+  .field .box.area { align-items: flex-start; padding-top: 18px; min-height: 120px; line-height: 1.45; font-size: 15px; }
+  .field .floating { position: absolute; left: 10px; top: -8px; padding: 0 4px; font-size: 12px; color: var(--muted); background: var(--surface); }
+  .field .box.focus + .floating, .field .floating.on { color: var(--accent); }
+  .field .placeholder { color: var(--muted); }
+  .field .hint { font-size: 12px; color: var(--muted); margin: 4px 14px 0; }
+  .field .err { font-size: 12px; color: var(--danger-text); margin: 4px 14px 0; }
+  .field .end { margin-left: auto; color: var(--muted); display: flex; }
+  .dots { letter-spacing: 3px; }
+  .check { display: flex; align-items: center; gap: 12px; min-height: 48px; color: var(--text-2); font-size: 15px; }
+  .check .box2 { width: 20px; height: 20px; border-radius: 4px; border: 2px solid var(--muted); flex-shrink: 0; }
+  .check .box2.on { background: var(--accent); border-color: var(--accent); position: relative; }
+  .check .box2.on::after { content: ""; position: absolute; left: 5px; top: 1px; width: 5px; height: 10px; border: solid var(--on-accent); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+  .radio { display: inline-flex; align-items: center; gap: 10px; min-height: 48px; margin-right: 24px; font-size: 15px; }
+  .radio span { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--muted); display: inline-flex; align-items: center; justify-content: center; }
+  .radio span.on { border-color: var(--accent); }
+  .radio span.on::after { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+
+  /* ---------- Surfaces ---------- */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); padding: 16px; margin-bottom: 16px; }
+  .list { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-card); overflow: hidden; }
+  .list > * + * { border-top: 1px solid var(--border); }
+  .alert { border-radius: var(--r-control); padding: 12px; font-size: 14px; line-height: 1.45; margin-bottom: 12px; border: 1px solid; }
+  .alert.info { background: var(--info-bg); color: var(--info-text); border-color: #25384F; }
+  .alert.success { background: var(--success-bg); color: var(--success-text); border-color: #24402B; }
+  .alert.error { background: var(--danger-bg); color: var(--danger-text); border-color: #5A2A24; }
+  .dropzone { border: 1px dashed var(--border); border-radius: var(--r-card); background: var(--surface); padding: 20px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; cursor: pointer; }
+  .dropzone svg.i { color: var(--accent); width: 28px; height: 28px; }
+  .dropzone strong { font-size: 15px; }
+
+  /* ---------- Segmented / chips / tabs ---------- */
+  .segmented { display: flex; border: 1px solid var(--border); border-radius: var(--r-control); overflow: hidden; margin-top: 12px; }
+  .segmented button { flex: 1; min-height: 48px; border: 0; background: var(--surface); color: var(--text-2); font-size: 14px; cursor: pointer; }
+  .segmented button + button { border-left: 1px solid var(--border); }
+  .segmented button.on { background: var(--accent-tint); color: var(--accent); font-weight: 600; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0 4px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips.wrap { flex-wrap: wrap; overflow: visible; }
+  .chip { flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+  .chip.on { background: var(--accent-tint); color: var(--accent); border-color: transparent; }
+  .chip.small { min-height: 32px; font-size: 13px; }
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-top: 8px; }
+  .tabs button { min-height: 48px; padding: 0 16px; border: 0; background: none; color: var(--muted); font-size: 14px; border-bottom: 2px solid transparent; }
+  .tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ---------- Posters ---------- */
+  .poster { aspect-ratio: 2 / 3; border-radius: var(--r-control); display: flex; align-items: flex-end; padding: 10px; font-size: 13px; font-weight: 600; line-height: 1.25; color: #fff; position: relative; overflow: hidden; }
+  .poster::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 70% 20%, rgba(255,255,255,.18), transparent 55%), linear-gradient(to top, rgba(0,0,0,.55), transparent 60%); }
+  .poster span { position: relative; }
+  .t0 { background: #3A2F4F; } .t1 { background: #24414A; } .t2 { background: #4A3326; } .t3 { background: #2E3F2C; }
+  .t4 { background: #41283A; } .t5 { background: #2B3550; } .t6 { background: #4A4026; } .t7 { background: #253B3B; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .tcard { cursor: pointer; }
+  .tcard .name { font-size: 14px; font-weight: 600; margin-top: 8px; }
+  .tcard .meta { font-size: 12px; margin-top: 2px; }
+
+  /* ---------- Rows ---------- */
+  .ep { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 4px 8px 12px; cursor: pointer; }
+  .ep .play { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: var(--on-accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .ep .play svg.i { width: 20px; height: 20px; }
+  .ep .code { color: var(--muted); font-weight: 600; min-width: 28px; font-size: 14px; }
+  .ep .txt { flex: 1; min-width: 0; }
+  .ep .txt div:first-child { font-size: 15px; }
+  .ep.sel { background: var(--accent-tint); outline: 1px solid var(--accent); outline-offset: -1px; border-radius: var(--r-control); }
+
+  /* ---------- Drawer & dialogs ---------- */
+  .scrim { position: absolute; inset: 0; background: rgba(0,0,0,.55); z-index: 10; }
+  .drawer { position: absolute; top: 0; bottom: 0; left: 0; width: 280px; background: var(--surface); z-index: 11; display: flex; flex-direction: column; padding: 24px 12px 12px; border-radius: 0 16px 16px 0; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
+  .brand .logo { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; color: var(--on-accent); }
+  .who { display: flex; align-items: center; gap: 12px; margin: 24px 8px 16px; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent-tint); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+  .nav-item { display: flex; align-items: center; gap: 16px; min-height: 48px; padding: 0 16px; border-radius: 999px; color: var(--text-2); font-size: 15px; border: 0; background: none; width: 100%; text-align: left; cursor: pointer; }
+  .nav-item.on { background: var(--accent-tint); color: var(--accent); font-weight: 600; }
+  .nav-section { font-size: 13px; color: var(--muted); margin: 16px 16px 8px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .dialog-wrap { position: absolute; inset: 0; background: rgba(0,0,0,.6); z-index: 20; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .dialog { background: var(--surface-2); border-radius: var(--r-dialog); padding: 24px 24px 8px; width: 100%; max-height: 100%; overflow-y: auto; }
+  .dialog h2 { font-size: 22px; font-weight: 600; margin: 0 0 16px; }
+  .dialog p { color: var(--text-2); font-size: 15px; line-height: 1.5; margin: 0; }
+  .dialog .field .box, .dialog .field .floating { background: var(--surface-2); }
+  .dialog .btns { display: flex; justify-content: flex-end; gap: 8px; margin: 16px -12px 0; }
+  .dialog .btns button { min-height: 48px; padding: 0 12px; border: 0; background: none; font-size: 15px; font-weight: 600; color: var(--text-2); cursor: pointer; }
+  .dialog .btns button.ok { color: var(--accent); }
+  .dialog .btns button.del { color: var(--danger-text); }
+
+  /* ---------- Player ---------- */
+  .video { aspect-ratio: 16 / 9; background: #000; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .video .frame { position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 40%, #3b2a4f 0%, #1a1424 45%, #000 80%); }
+  .video .controls { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 12px; background: linear-gradient(to top, rgba(0,0,0,.8), transparent); display: flex; align-items: center; gap: 10px; font-size: 12px; color: #fff; }
+  .video .bar { flex: 1; height: 4px; background: rgba(255,255,255,.3); border-radius: 2px; position: relative; }
+  .video .bar::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 38%; background: var(--accent); border-radius: 2px; }
+  .video .big { position: relative; width: 56px; height: 56px; border-radius: 50%; background: rgba(0,0,0,.5); display: flex; align-items: center; justify-content: center; color: #fff; }
+  .thumb { width: 112px; height: 63px; border-radius: var(--r-control); background: var(--surface-2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; color: var(--accent); flex-shrink: 0; }
+  .next { display: flex; gap: 12px; align-items: center; padding: 8px 0; cursor: pointer; }
+
+  .progress { height: 6px; border-radius: 4px; background: var(--border); overflow: hidden; margin-top: 8px; }
+  .progress span { display: block; height: 100%; width: 64%; background: var(--accent); border-radius: 4px; }
+  .lockline { display: flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; }
+  .lockline svg.i { width: 15px; height: 15px; }
+  .section-h { font-size: 17px; font-weight: 700; margin: 16px 0 8px; }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- Same Material icon paths as res/drawable/ic_*.xml -->
+  <symbol id="menu" viewBox="0 0 24 24"><path d="M3,18h18v-2H3v2zM3,13h18v-2H3v2zM3,6v2h18V6H3z"/></symbol>
+  <symbol id="back" viewBox="0 0 24 24"><path d="M20,11H7.83l5.59,-5.59L12,4l-8,8 8,8 1.41,-1.41L7.83,13H20v-2z"/></symbol>
+  <symbol id="search" viewBox="0 0 24 24"><path d="M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z"/></symbol>
+  <symbol id="play" viewBox="0 0 24 24"><path d="M8,5v14l11,-7z"/></symbol>
+  <symbol id="edit" viewBox="0 0 24 24"><path d="M3,17.25V21h3.75L17.81,9.94l-3.75,-3.75L3,17.25zM20.71,7.04c0.39,-0.39 0.39,-1.02 0,-1.41l-2.34,-2.34c-0.39,-0.39 -1.02,-0.39 -1.41,0l-1.83,1.83 3.75,3.75 1.83,-1.83z"/></symbol>
+  <symbol id="delete" viewBox="0 0 24 24"><path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V7H6v12zM19,4h-3.5l-1,-1h-5l-1,1H5v2h14V4z"/></symbol>
+  <symbol id="upload" viewBox="0 0 24 24"><path d="M9,16h6v-6h4l-7,-7 -7,7h4zM5,18h14v2H5z"/></symbol>
+  <symbol id="add" viewBox="0 0 24 24"><path d="M19,13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></symbol>
+  <symbol id="logout" viewBox="0 0 24 24"><path d="M17,7l-1.41,1.41L18.17,11H8v2h10.17l-2.58,2.58L17,17l5,-5zM4,5h8V3H4c-1.1,0 -2,0.9 -2,2v14c0,1.1 0.9,2 2,2h8v-2H4V5z"/></symbol>
+  <symbol id="grid" viewBox="0 0 24 24"><path d="M3,3v8h8V3H3zM9,9H5V5h4v4zM3,13v8h8v-8H3zM9,19H5v-4h4v4zM13,3v8h8V3h-8zM19,9h-4V5h4v4zM13,13v8h8v-8h-8zM19,19h-4v-4h4v4z"/></symbol>
+  <symbol id="person" viewBox="0 0 24 24"><path d="M12,12c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4 -4,1.79 -4,4 1.79,4 4,4zM12,14c-2.67,0 -8,1.34 -8,4v2h16v-2c0,-2.66 -5.33,-4 -8,-4z"/></symbol>
+  <symbol id="people" viewBox="0 0 24 24"><path d="M16,11c1.66,0 2.99,-1.34 2.99,-3S17.66,5 16,5c-1.66,0 -3,1.34 -3,3s1.34,3 3,3zM8,11c1.66,0 2.99,-1.34 2.99,-3S9.66,5 8,5C6.34,5 5,6.34 5,8s1.34,3 3,3zM8,13c-2.33,0 -7,1.17 -7,3.5V19h14v-2.5c0,-2.33 -4.67,-3.5 -7,-3.5zM16,13c-0.29,0 -0.62,0.02 -0.97,0.05 1.16,0.84 1.97,1.97 1.97,3.45V19h6v-2.5c0,-2.33 -4.67,-3.5 -7,-3.5z"/></symbol>
+  <symbol id="movie" viewBox="0 0 24 24"><path d="M18,4l2,4h-3l-2,-4h-2l2,4h-3l-2,-4H8l2,4H7L5,4H4c-1.1,0 -1.99,0.9 -1.99,2L2,18c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V4h-4z"/></symbol>
+  <symbol id="tag" viewBox="0 0 24 24"><path d="M21.41,11.58l-9,-9C12.05,2.22 11.55,2 11,2H4c-1.1,0 -2,0.9 -2,2v7c0,0.55 0.22,1.05 0.59,1.42l9,9c0.36,0.36 0.86,0.58 1.41,0.58 0.55,0 1.05,-0.22 1.41,-0.59l7,-7c0.37,-0.36 0.59,-0.86 0.59,-1.41 0,-0.55 -0.23,-1.06 -0.59,-1.42zM5.5,7C4.67,7 4,6.33 4,5.5S4.67,4 5.5,4 7,4.67 7,5.5 6.33,7 5.5,7z"/></symbol>
+  <symbol id="files" viewBox="0 0 24 24"><path d="M21,3H3c-1.11,0 -2,0.89 -2,2v12c0,1.1 0.89,2 2,2h5v2h8v-2h5c1.1,0 1.99,-0.9 1.99,-2L23,5c0,-1.11 -0.9,-2 -2,-2zM21,17H3V5h18v12zM16,11l-7,4V7z"/></symbol>
+  <symbol id="lock" viewBox="0 0 24 24"><path d="M18,8h-1V6c0,-2.76 -2.24,-5 -5,-5S7,3.24 7,6v2H6c-1.1,0 -2,0.9 -2,2v10c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2V10c0,-1.1 -0.9,-2 -2,-2zM12,17c-1.1,0 -2,-0.9 -2,-2s0.9,-2 2,-2 2,0.9 2,2 -0.9,2 -2,2zM15.1,8H8.9V6c0,-1.71 1.39,-3.1 3.1,-3.1 1.71,0 3.1,1.39 3.1,3.1v2z"/></symbol>
+  <symbol id="eye" viewBox="0 0 24 24"><path d="M12,4.5C7,4.5 2.73,7.61 1,12c1.73,4.39 6,7.5 11,7.5s9.27,-3.11 11,-7.5c-1.73,-4.39 -6,-7.5 -11,-7.5zM12,17c-2.76,0 -5,-2.24 -5,-5s2.24,-5 5,-5 5,2.24 5,5 -2.24,5 -5,5zM12,9c-1.66,0 -3,1.34 -3,3s1.34,3 3,3 3,-1.34 3,-3 -1.34,-3 -3,-3z"/></symbol>
+  <symbol id="dropdown" viewBox="0 0 24 24"><path d="M7,10l5,5 5,-5z"/></symbol>
+  <symbol id="left" viewBox="0 0 24 24"><path d="M15.41,7.41L14,6l-6,6 6,6 1.41,-1.41L10.83,12z"/></symbol>
+  <symbol id="right" viewBox="0 0 24 24"><path d="M10,6L8.59,7.41 13.17,12l-4.58,4.59L10,18l6,-6z"/></symbol>
+  <symbol id="pause" viewBox="0 0 24 24"><path d="M6,19h4V5H6v14zM14,5v14h4V5h-4z"/></symbol>
+  <symbol id="fullscreen" viewBox="0 0 24 24"><path d="M7,14H5v5h5v-2H7v-3zM5,10h2V7h3V5H5v5zM17,17h-3v2h5v-5h-2v3zM14,5v2h3v3h2V5h-5z"/></symbol>
+  <symbol id="signal" viewBox="0 0 24 24"><path d="M2,22h20V2z"/></symbol>
+  <symbol id="wifi" viewBox="0 0 24 24"><path d="M12,21l3.6,-4.8C14.6,15.45 13.35,15 12,15s-2.6,0.45 -3.6,1.2L12,21zM12,3C7.95,3 4.21,4.34 1.2,6.6l1.8,2.4C5.5,7.12 8.62,6 12,6s6.5,1.12 9,3l1.8,-2.4C19.79,4.34 16.05,3 12,3zM12,9c-2.7,0 -5.19,0.89 -7.2,2.4l1.8,2.4C8.1,12.67 9.97,12 12,12s3.9,0.67 5.4,1.8l1.8,-2.4C17.19,9.89 14.7,9 12,9z"/></symbol>
+  <symbol id="battery" viewBox="0 0 24 24"><path d="M15.67,4H14V2h-4v2H8.33C7.6,4 7,4.6 7,5.33v15.33C7,21.4 7.6,22 8.33,22h7.33c0.74,0 1.34,-0.6 1.34,-1.33V5.33C17,4.6 16.4,4 15.67,4z"/></symbol>
+</svg>
+
+<nav class="index" aria-label="Pantallas">
+  <h1>MultimediaServer · Android</h1>
+  <p>Maqueta navegable de la app. Toca los botones dentro del teléfono o elige una pantalla.</p>
+  <ol id="index"></ol>
+</nav>
+
+<div class="phone" role="img" aria-label="Maqueta de la app">
+  <div class="statusbar">
+    <span>9:41</span>
+    <span class="icons"><svg><use href="#wifi"/></svg><svg><use href="#signal"/></svg><svg><use href="#battery"/></svg></span>
+  </div>
+
+  <div class="viewport">
+
+    <!-- =============================== 1. Login =============================== -->
+    <section class="screen" id="login" data-title="Iniciar sesión" data-desc="Pública">
+      <div class="scroll" style="padding:24px">
+        <div class="brand"><span class="logo"><svg class="i" style="width:18px;height:18px"><use href="#play"/></svg></span>MultimediaServer</div>
+        <div class="h1" style="margin-top:32px">Tu videoteca, en tu propio servidor.</div>
+        <p class="subtitle">Películas y series alojadas en casa, listas para reproducir desde el móvil.</p>
+        <div class="card" style="padding:20px;margin-top:24px">
+          <div style="font-size:20px;font-weight:700">Iniciar sesión</div>
+          <p class="subtitle" style="margin:4px 0 16px">Entra con tu usuario y contraseña.</p>
+          <div class="field"><div class="box">sergio</div><span class="floating">Usuario</span></div>
+          <div class="field"><div class="box focus"><span class="dots">••••••••••</span><span class="end"><svg class="i"><use href="#eye"/></svg></span></div><span class="floating">Contraseña</span></div>
+          <div class="check" style="margin-top:8px"><span class="box2 on"></span>Mantener la sesión iniciada</div>
+          <div class="meta" style="margin:-8px 0 0 32px">No lo actives en un dispositivo compartido.</div>
+          <button class="btn block lg" style="margin-top:16px" onclick="goTo('catalog')">Entrar</button>
+          <button class="btn ghost block" style="margin-top:8px;font-weight:500">Servidor: http://192.168.1.10:8080</button>
+        </div>
+        <p class="meta" style="text-align:center;margin-top:24px">Las cuentas las crea un administrador del servidor.</p>
+      </div>
+    </section>
+
+    <!-- =============================== 2. Catalog =============================== -->
+    <section class="screen" id="catalog" data-title="Catálogo" data-desc="USER y ADMIN">
+      <div class="toolbar"><button class="icon-btn" aria-label="Abrir menú" onclick="goTo('drawer')"><svg class="i"><use href="#menu"/></svg></button><span class="title">Catálogo</span></div>
+      <div class="scroll">
+        <p class="subtitle" style="margin-bottom:12px">Películas y series disponibles en el servidor.</p>
+        <button class="btn block" onclick="goTo('form')"><svg class="i"><use href="#add"/></svg>Nueva película o serie</button>
+        <div class="field" style="margin-top:16px"><div class="box"><svg class="i" style="color:var(--muted)"><use href="#search"/></svg><span class="placeholder">Buscar por nombre…</span></div></div>
+        <div class="segmented"><button class="on">Todo</button><button>Películas</button><button>Series</button></div>
+        <div class="chips"><span class="chip on">Todos</span><span class="chip">Acción</span><span class="chip">Animación</span><span class="chip">Ciencia ficción</span><span class="chip">Comedia</span><span class="chip">Drama</span></div>
+        <div class="grid">
+          <div class="tcard" onclick="goTo('detail')"><div class="poster t0"><span>Horizonte rojo</span></div><div class="name">Horizonte rojo</div><div class="meta">2023 · Ciencia ficción, Drama</div></div>
+          <div class="tcard" onclick="goTo('detail')"><div class="poster t1"><span>La casa del lago</span></div><div class="name">La casa del lago</div><div class="meta">2019 · Drama</div></div>
+          <div class="tcard" onclick="goTo('detail')"><div class="poster t2"><span>Los últimos días</span></div><div class="name">Los últimos días</div><div class="meta">2021 · Acción</div></div>
+          <div class="tcard" onclick="goTo('detail')"><div class="poster t3"><span>Bosque eterno</span></div><div class="name">Bosque eterno</div><div class="meta">2018 · Animación</div></div>
+          <div class="tcard" onclick="goTo('detail')"><div class="poster t4"><span>Noches de ciudad</span></div><div class="name">Noches de ciudad</div><div class="meta">2022 · Comedia</div></div>
+          <div class="tcard" onclick="goTo('detail')"><div class="poster t5"><span>Marea alta</span></div><div class="name">Marea alta</div><div class="meta">2020 · Drama</div></div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;padding:16px 0">
+          <button class="btn secondary" disabled style="background:var(--surface-2);color:var(--muted);opacity:.6"><svg class="i"><use href="#left"/></svg>Anterior</button>
+          <span class="meta">Página 1</span>
+          <button class="btn secondary">Siguiente<svg class="i"><use href="#right"/></svg></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================== 3. Drawer =============================== -->
+    <section class="screen" id="drawer" data-title="Menú lateral" data-desc="Sección Administración solo ADMIN">
+      <div class="toolbar"><button class="icon-btn"><svg class="i"><use href="#menu"/></svg></button><span class="title">Catálogo</span></div>
+      <div class="scroll"><div class="grid" style="margin-top:0"><div class="poster t0"></div><div class="poster t1"></div><div class="poster t2"></div><div class="poster t3"></div></div></div>
+      <div class="scrim" onclick="goTo('catalog')"></div>
+      <div class="drawer">
+        <div class="brand" style="padding:0 8px"><span class="logo"><svg class="i" style="width:18px;height:18px"><use href="#play"/></svg></span>MultimediaServer</div>
+        <div class="who"><span class="avatar">SM</span><div><div style="font-weight:700">sergio</div><div class="meta">ADMIN</div></div></div>
+        <button class="nav-item on" onclick="goTo('catalog')"><svg class="i"><use href="#grid"/></svg>Catálogo</button>
+        <button class="nav-item" onclick="goTo('account')"><svg class="i"><use href="#person"/></svg>Mi cuenta</button>
+        <div class="nav-section">Administración</div>
+        <button class="nav-item" onclick="goTo('content')"><svg class="i"><use href="#movie"/></svg>Contenido</button>
+        <button class="nav-item" onclick="goTo('multimedia')"><svg class="i"><use href="#upload"/></svg>Episodios y vídeo</button>
+        <button class="nav-item" onclick="goTo('genres')"><svg class="i"><use href="#tag"/></svg>Géneros</button>
+        <button class="nav-item" onclick="goTo('users')"><svg class="i"><use href="#people"/></svg>Usuarios</button>
+        <div style="flex:1"></div>
+        <button class="nav-item" style="border-top:1px solid var(--border);border-radius:0" onclick="goTo('login')"><svg class="i"><use href="#logout"/></svg>Cerrar sesión</button>
+      </div>
+    </section>
+
+    <!-- =============================== 4. Detail =============================== -->
+    <section class="screen" id="detail" data-title="Detalle de serie" data-desc="Temporadas y episodios">
+      <div class="toolbar"><button class="icon-btn" aria-label="Volver al catálogo" onclick="goTo('catalog')"><svg class="i"><use href="#back"/></svg></button><span class="title soft">Volver al catálogo</span></div>
+      <div class="scroll">
+        <div class="poster t0" style="width:180px;margin:0 auto;font-size:15px"><span>Horizonte rojo</span></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:20px"><span class="badge">SERIE</span><span class="meta">2023 · +13 · 2 temporadas</span></div>
+        <div class="h1">Horizonte rojo</div>
+        <div class="chips wrap" style="padding:0"><span class="chip small">Ciencia ficción</span><span class="chip small">Drama</span></div>
+        <p style="color:var(--text-2);font-size:15px;line-height:1.5;margin:12px 0 0">Una tripulación varada en Marte descubre que la señal que los trajo hasta allí no venía de la Tierra.</p>
+        <button class="btn block lg" style="margin-top:20px" onclick="goTo('player')"><svg class="i"><use href="#play"/></svg>Reproducir T1 · E1</button>
+        <div class="row" style="margin-top:8px">
+          <button class="btn secondary" onclick="goTo('form')"><svg class="i"><use href="#edit"/></svg>Editar</button>
+          <button class="btn danger" onclick="goTo('delete')"><svg class="i"><use href="#delete"/></svg>Eliminar</button>
+        </div>
+        <button class="btn secondary block" style="margin-top:8px" onclick="goTo('multimedia')"><svg class="i"><use href="#upload"/></svg>Añadir episodio</button>
+        <div style="font-size:20px;font-weight:700;margin-top:28px">Episodios</div>
+        <div class="tabs"><button class="on">Temporada 1</button><button>Temporada 2</button></div>
+        <div class="list" style="margin-top:12px">
+          <div class="ep" onclick="goTo('player')"><span class="play"><svg class="i"><use href="#play"/></svg></span><span class="code">E1</span><div class="txt"><div>La señal</div><div class="meta">52 min</div></div><button class="icon-btn" aria-label="Editar episodio"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger" aria-label="Eliminar episodio"><svg class="i"><use href="#delete"/></svg></button></div>
+          <div class="ep" onclick="goTo('player')"><span class="play"><svg class="i"><use href="#play"/></svg></span><span class="code">E2</span><div class="txt"><div>Polvo y hierro</div><div class="meta">48 min</div></div><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+          <div class="ep" onclick="goTo('player')"><span class="play"><svg class="i"><use href="#play"/></svg></span><span class="code">E3</span><div class="txt"><div>Episodio 3</div><div class="meta">55 min</div></div><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================== 5. Delete confirmation =============================== -->
+    <section class="screen" id="delete" data-title="Eliminar título" data-desc="Confirmación en cascada">
+      <div class="toolbar"><button class="icon-btn"><svg class="i"><use href="#back"/></svg></button><span class="title soft">Volver al catálogo</span></div>
+      <div class="scroll"><div class="poster t0" style="width:180px;margin:0 auto"></div></div>
+      <div class="dialog-wrap">
+        <div class="dialog" role="dialog" aria-modal="true">
+          <h2>¿Eliminar «Horizonte rojo»?</h2>
+          <p>También se eliminarán sus <strong>18 episodios</strong>. Los archivos se conservan en el servidor y la acción queda registrada en la auditoría.</p>
+          <div class="btns"><button onclick="goTo('detail')">Cancelar</button><button class="del" onclick="goTo('catalog')">Eliminar</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================== 6. Player =============================== -->
+    <section class="screen" id="player" data-title="Reproductor" data-desc="En horizontal pasa a pantalla completa">
+      <div class="toolbar"><button class="icon-btn" aria-label="Volver" onclick="goTo('detail')"><svg class="i"><use href="#back"/></svg></button><span class="title soft">Horizonte rojo</span></div>
+      <div class="video">
+        <div class="frame"></div>
+        <div class="big"><svg class="i" style="width:30px;height:30px"><use href="#pause"/></svg></div>
+        <div class="controls"><span>19:42</span><div class="bar"></div><span>52:10</span><svg class="i" style="width:18px;height:18px"><use href="#fullscreen"/></svg></div>
+      </div>
+      <div class="scroll">
+        <div class="meta">Temporada 1 · Episodio 1 · 52 min</div>
+        <div style="font-size:22px;font-weight:700;margin-top:4px">La señal</div>
+        <div class="section-h" style="margin-top:24px">Siguientes episodios</div>
+        <div class="next"><span class="thumb"><svg class="i"><use href="#play"/></svg></span><div><div class="meta">T1 · E2</div><div style="font-size:15px">Polvo y hierro</div><div class="meta">48 min</div></div></div>
+        <div class="next"><span class="thumb"><svg class="i"><use href="#play"/></svg></span><div><div class="meta">T1 · E3</div><div style="font-size:15px">Episodio 3</div><div class="meta">55 min</div></div></div>
+        <div class="next"><span class="thumb"><svg class="i"><use href="#play"/></svg></span><div><div class="meta">T2 · E1</div><div style="font-size:15px">Regreso</div><div class="meta">50 min</div></div></div>
+      </div>
+    </section>
+
+    <!-- =============================== 7. Account =============================== -->
+    <section class="screen" id="account" data-title="Mi cuenta" data-desc="El rol se muestra bloqueado">
+      <div class="toolbar"><button class="icon-btn" onclick="goTo('drawer')"><svg class="i"><use href="#menu"/></svg></button><span class="title">Mi cuenta</span></div>
+      <div class="scroll">
+        <p class="subtitle">Actualiza tus datos personales y tus credenciales.</p>
+        <div class="alert success">Datos guardados correctamente.</div>
+        <div class="card">
+          <div class="card-title">Datos personales</div>
+          <div class="field"><div class="box">Sergio</div><span class="floating">Nombre</span></div>
+          <div class="field"><div class="box">Martínez</div><span class="floating">Apellido</span></div>
+          <div class="field"><div class="box">sergio@ejemplo.com</div><span class="floating">Email</span></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Cuenta</div>
+          <div class="field"><div class="box">sergio</div><span class="floating">Nombre de usuario</span><div class="hint">Si lo cambias, tendrás que volver a iniciar sesión.</div></div>
+          <div class="field"><div class="box"><span class="placeholder">Entre 8 y 72 caracteres</span><span class="end"><svg class="i"><use href="#eye"/></svg></span></div><span class="floating">Nueva contraseña</span></div>
+          <div class="field"><div class="box"><span class="end"><svg class="i"><use href="#eye"/></svg></span></div><span class="floating">Repite la contraseña</span></div>
+          <div style="display:flex;gap:12px;margin-top:16px;padding:12px;border-radius:var(--r-control);background:var(--surface-2);border:1px solid var(--border)">
+            <svg class="i" style="width:20px;height:20px;color:var(--muted)"><use href="#lock"/></svg>
+            <div><div style="font-weight:600">Rol: ADMIN</div><div class="meta">Tu rol se gestiona desde Administración › Usuarios.</div></div>
+          </div>
+        </div>
+        <div class="actions" style="margin-top:0"><button class="btn ghost">Descartar cambios</button><button class="btn">Guardar cambios</button></div>
+      </div>
+    </section>
+
+    <!-- =============================== 8. Admin content =============================== -->
+    <section class="screen" id="content" data-title="Contenido" data-desc="ADMIN">
+      <div class="toolbar"><button class="icon-btn" onclick="goTo('drawer')"><svg class="i"><use href="#menu"/></svg></button><span class="title">Contenido</span></div>
+      <div class="scroll">
+        <p class="subtitle" style="margin-bottom:12px">Gestiona las películas y series del catálogo.</p>
+        <button class="btn block" onclick="goTo('form')"><svg class="i"><use href="#add"/></svg>Nueva película o serie</button>
+        <div class="field" style="margin-top:16px"><div class="box"><span class="placeholder">Nombre…</span></div><span class="floating">Buscar</span></div>
+        <div class="field"><div class="box">Todos<span class="end"><svg class="i"><use href="#dropdown"/></svg></span></div><span class="floating">Tipo</span></div>
+        <div class="list" style="margin-top:16px" id="content-rows"></div>
+      </div>
+    </section>
+
+    <!-- =============================== 9. Title form =============================== -->
+    <section class="screen" id="form" data-title="Película o serie" data-desc="Formulario con póster">
+      <div class="toolbar"><button class="icon-btn" aria-label="Volver a contenido" onclick="goTo('content')"><svg class="i"><use href="#back"/></svg></button><span class="title">Editar «Horizonte rojo»</span></div>
+      <div class="scroll">
+        <p class="subtitle">Datos del catálogo, géneros y póster.</p>
+        <div class="label" style="margin-top:0">Póster</div>
+        <div style="display:flex;gap:12px">
+          <div class="poster t0" style="width:120px;flex-shrink:0"><span>Horizonte rojo</span></div>
+          <div class="dropzone" style="flex:1;justify-content:center"><svg class="i"><use href="#upload"/></svg><strong>Reemplazar póster</strong><span class="meta">JPG, PNG o WEBP · máx. 5MB · opcional</span></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="field"><div class="box">Horizonte rojo<span class="end meta">14/100</span></div><span class="floating">Nombre</span></div>
+          <div class="field"><div class="box area">Una tripulación varada en Marte descubre que la señal que los trajo hasta allí no venía de la Tierra.</div><span class="floating">Sinopsis</span></div>
+          <div class="row" style="margin-top:12px">
+            <div class="field" style="margin:0"><div class="box">2023</div><span class="floating">Año de estreno</span></div>
+            <div class="field" style="margin:0"><div class="box">+13</div><span class="floating">Clasificación</span><div class="hint">Opcional, p. ej. +13</div></div>
+          </div>
+          <div class="label">Tipo</div>
+          <div><span class="radio" style="opacity:.4"><span></span>Película</span><span class="radio"><span class="on"></span>Serie</span></div>
+          <div class="meta">No se puede cambiar el tipo mientras tenga episodios.</div>
+          <div class="label">Géneros</div>
+          <div class="chips wrap" style="padding:0"><span class="chip">Acción</span><span class="chip">Animación</span><span class="chip on">✓ Ciencia ficción</span><span class="chip">Comedia</span><span class="chip on">✓ Drama</span><span class="chip">Terror</span></div>
+        </div>
+        <div class="actions" style="margin-top:0"><button class="btn ghost" onclick="goTo('content')">Cancelar</button><button class="btn" onclick="goTo('detail')">Guardar cambios</button></div>
+      </div>
+    </section>
+
+    <!-- =============================== 10. Episodes & video =============================== -->
+    <section class="screen" id="multimedia" data-title="Episodios y vídeo" data-desc="Subida con progreso">
+      <div class="toolbar"><button class="icon-btn" onclick="goTo('drawer')"><svg class="i"><use href="#menu"/></svg></button><span class="title">Episodios y vídeo</span></div>
+      <div class="scroll">
+        <p class="subtitle">Sube y gestiona los archivos reproducibles de cada título.</p>
+        <div class="field"><div class="box">Horizonte rojo (serie)<span class="end"><svg class="i"><use href="#dropdown"/></svg></span></div><span class="floating">Película o serie</span></div>
+        <div class="section-h">Temporada 1</div>
+        <div class="list">
+          <div class="ep"><span class="play"><svg class="i"><use href="#play"/></svg></span><span class="code">E1</span><div class="txt"><div>La señal</div><div class="meta">52 min</div></div><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+          <div class="ep"><span class="play"><svg class="i"><use href="#play"/></svg></span><span class="code">E2</span><div class="txt"><div>Polvo y hierro</div><div class="meta">48 min</div></div><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="card-title">Nuevo episodio</div>
+          <div class="row">
+            <div class="field" style="margin:0"><div class="box">1</div><span class="floating">Temporada</span></div>
+            <div class="field" style="margin:0"><div class="box">3</div><span class="floating">Episodio</span></div>
+          </div>
+          <div class="field"><div class="box"><span class="placeholder"></span><span class="end meta">0/100</span></div><span class="floating">Título (opcional)</span></div>
+          <div class="dropzone" style="margin-top:12px;opacity:.6"><svg class="i"><use href="#upload"/></svg><strong>horizonte_rojo_s01e03.mp4</strong><span class="meta">MP4 o WEBM · hasta 10GB</span></div>
+          <div style="margin-top:12px;padding:12px;border-radius:var(--r-control);background:var(--surface-2);border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span>horizonte_rojo_s01e03.mp4</span><strong style="color:var(--accent)">64%</strong></div>
+            <div class="progress" role="progressbar" aria-label="Progreso de subida" aria-valuenow="64"><span></span></div>
+            <div class="meta" style="margin-top:8px">La duración se calcula en el servidor al terminar la subida.</div>
+          </div>
+          <div class="actions"><button class="btn">Cancelar subida</button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================== 11. Genres =============================== -->
+    <section class="screen" id="genres" data-title="Géneros" data-desc="Edición en línea">
+      <div class="toolbar"><button class="icon-btn" onclick="goTo('drawer')"><svg class="i"><use href="#menu"/></svg></button><span class="title">Géneros</span></div>
+      <div class="scroll">
+        <p class="subtitle">Los géneros con los que se clasifican películas y series.</p>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div class="field" style="flex:1;margin:0"><div class="box"><span class="placeholder">Ej. Documental</span></div><span class="floating">Nuevo género</span></div>
+          <button class="btn" style="min-height:56px"><svg class="i"><use href="#add"/></svg>Añadir</button>
+        </div>
+        <div class="alert error" style="margin-top:12px">No se puede eliminar el género porque hay películas o series que lo usan.</div>
+        <div class="list" style="margin-top:4px">
+          <div style="display:flex;align-items:center;min-height:56px;padding-left:16px"><span style="flex:1">Acción</span><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+          <div style="padding:12px;background:var(--accent-tint)">
+            <div class="field"><div class="box focus" style="background:var(--surface)">Animación infantil</div><span class="floating" style="background:var(--surface)">Editar género</span></div>
+            <div class="actions" style="margin-top:8px"><button class="btn ghost">Cancelar</button><button class="btn">Guardar</button></div>
+          </div>
+          <div style="display:flex;align-items:center;min-height:56px;padding-left:16px"><span style="flex:1">Ciencia ficción</span><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+          <div style="display:flex;align-items:center;min-height:56px;padding-left:16px"><span style="flex:1">Comedia</span><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+          <div style="display:flex;align-items:center;min-height:56px;padding-left:16px"><span style="flex:1">Drama</span><button class="icon-btn"><svg class="i"><use href="#edit"/></svg></button><button class="icon-btn danger"><svg class="i"><use href="#delete"/></svg></button></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =============================== 12. Users =============================== -->
+    <section class="screen" id="users" data-title="Usuarios" data-desc="Otro admin queda bloqueado">
+      <div class="toolbar"><button class="icon-btn" onclick="goTo('drawer')"><svg class="i"><use href="#menu"/></svg></button><span class="title">Usuarios</span></div>
+      <div class="scroll">
+        <p class="subtitle" style="margin-bottom:12px">Crea cuentas y gestiona las de los usuarios.</p>
+        <button class="btn block" onclick="goTo('userform')"><svg class="i"><use href="#add"/></svg>Nuevo usuario</button>
+        <div class="alert info" style="margin-top:16px">Las cuentas de otros administradores no se pueden editar ni eliminar. Siempre debe quedar al menos un administrador activo.</div>
+        <div class="list" id="user-rows"></div>
+      </div>
+    </section>
+
+    <!-- =============================== 13. User form =============================== -->
+    <section class="screen" id="userform" data-title="Nuevo usuario" data-desc="Diálogo con validación">
+      <div class="toolbar"><button class="icon-btn"><svg class="i"><use href="#menu"/></svg></button><span class="title">Usuarios</span></div>
+      <div class="scroll"></div>
+      <div class="dialog-wrap">
+        <div class="dialog" role="dialog" aria-modal="true">
+          <h2>Nuevo usuario</h2>
+          <div class="field"><div class="box">Lucía</div><span class="floating">Nombre</span></div>
+          <div class="field"><div class="box">Gómez</div><span class="floating">Apellido</span></div>
+          <div class="field"><div class="box">lucia@ejemplo.com</div><span class="floating">Email</span></div>
+          <div class="field"><div class="box">lucia</div><span class="floating">Nombre de usuario</span></div>
+          <div class="field"><div class="box">USER<span class="end"><svg class="i"><use href="#dropdown"/></svg></span></div><span class="floating">Rol</span></div>
+          <div class="field"><div class="box error"><span class="dots">•••••</span><span class="end"><svg class="i"><use href="#eye"/></svg></span></div><span class="floating" style="color:var(--danger-text)">Contraseña</span><div class="err">La contraseña debe tener entre 8 y 72 caracteres.</div></div>
+          <div class="btns"><button onclick="goTo('users')">Cancelar</button><button class="ok" onclick="goTo('users')">Crear usuario</button></div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  <div class="gesture"><span></span></div>
+</div>
+
+<script>
+  // Repeated rows, built once to keep the markup above readable.
+  const titles = [
+    ['Bosque eterno', 'PELÍCULA', '2018', 'Animación', '1 vídeo', 't3'],
+    ['Horizonte rojo', 'SERIE', '2023', 'Ciencia ficción, Drama', '18 episodios', 't0'],
+    ['La casa del lago', 'PELÍCULA', '2019', 'Drama', '1 vídeo', 't1'],
+    ['Los últimos días', 'PELÍCULA', '2021', 'Acción', 'Sin vídeo', 't2'],
+    ['Noches de ciudad', 'SERIE', '2022', 'Comedia', '8 episodios', 't4'],
+  ];
+  document.getElementById('content-rows').innerHTML = titles.map(([n, type, y, g, f, t]) => `
+    <div style="padding:12px 4px 4px 12px">
+      <div style="display:flex;gap:12px">
+        <div class="poster ${t}" style="width:48px;flex-shrink:0;padding:0"></div>
+        <div style="flex:1">
+          <div style="font-weight:600">${n}</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:4px"><span class="badge">${type}</span><span class="meta">${y}</span></div>
+          <div class="meta" style="margin-top:4px">${g}</div><div class="meta">${f}</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:flex-end">
+        <button class="icon-btn" aria-label="Editar ${n}" onclick="goTo('form')"><svg class="i"><use href="#edit"/></svg></button>
+        <button class="icon-btn" aria-label="Archivos de ${n}" onclick="goTo('multimedia')"><svg class="i"><use href="#files"/></svg></button>
+        <button class="icon-btn danger" aria-label="Eliminar ${n}" onclick="goTo('delete')"><svg class="i"><use href="#delete"/></svg></button>
+      </div>
+    </div>`).join('');
+
+  const users = [
+    ['sergio (tú)', 'sergio@ejemplo.com', 'Sergio Martínez', 'ADMIN', false],
+    ['admin', '—', 'Sin datos personales', 'ADMIN', true],
+    ['lucia', 'lucia@ejemplo.com', 'Lucía Gómez', 'USER', false],
+    ['pablo', 'pablo@ejemplo.com', 'Pablo Ruiz', 'USER', false],
+  ];
+  document.getElementById('user-rows').innerHTML = users.map(([u, e, n, r, locked]) => `
+    <div style="display:flex;align-items:center;padding:12px 4px 12px 16px">
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600">${u}</div><div class="meta">${e}</div>
+        <div style="color:var(--text-2);font-size:14px;margin-top:2px">${n}</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <span class="badge ${r === 'ADMIN' ? 'accent' : ''}">${r}</span><span class="meta">Activo</span>
+          ${locked ? '<span class="lockline" style="margin-left:4px"><svg class="i"><use href="#lock"/></svg>Otro admin</span>' : ''}
+        </div>
+      </div>
+      <button class="icon-btn" aria-label="Editar ${u}" ${locked ? 'disabled' : ''} onclick="goTo('userform')"><svg class="i"><use href="#edit"/></svg></button>
+      <button class="icon-btn ${locked ? '' : 'danger'}" aria-label="Eliminar ${u}" ${locked ? 'disabled' : ''}><svg class="i"><use href="#delete"/></svg></button>
+    </div>`).join('');
+
+  const screens = [...document.querySelectorAll('.screen')];
+  const index = document.getElementById('index');
+  index.innerHTML = screens.map((s, i) =>
+    `<li><button data-id="${s.id}" onclick="goTo('${s.id}')">${i + 1}. ${s.dataset.title}<small>${s.dataset.desc}</small></button></li>`).join('');
+
+  function goTo(id) {
+    screens.forEach(s => s.classList.toggle('active', s.id === id));
+    index.querySelectorAll('button').forEach(b => b.setAttribute('aria-current', b.dataset.id === id));
+    const scroll = document.getElementById(id).querySelector('.scroll');
+    if (scroll) scroll.scrollTop = 0;
+    try {
+      history.replaceState(null, '', '?screen=' + id + (document.body.classList.contains('bare') ? '&bare=1' : ''));
+    } catch (e) {
+      // Some viewers (data: or sandboxed pages) do not allow it; navigation still works.
+    }
+  }
+
+  const params = new URLSearchParams(location.search);
+  if (params.get('bare')) document.body.classList.add('bare');
+  goTo(params.get('screen') && document.getElementById(params.get('screen')) ? params.get('screen') : 'login');
+</script>
+</body>
+</html>

@@ -60,6 +60,10 @@ ui/
 - **Styling**: tokens in `res/values/colors.xml` (same values as the web `tokens.css`); text, button and input styles in `res/values/styles.xml`; shapes in `res/drawable/bg_*.xml`. Headings use `sans-serif-medium` bold (Sora and Inter are not bundled).
 - **UI copy** is Spanish and written inline in layouts and code, as in the web client (lint reports it as `HardcodedText`; that is expected).
 
+## Mockups
+
+`docs/mockups/index.html` is a navigable HTML mockup of every screen (same tokens and copy as the app). `?screen=<id>&bare=1` renders one screen without the page chrome; that is how `docs/mockups/png/` (used by `README.md`) was exported with headless Chrome at 390×844, scale 2. When a screen changes, update the mockup and re-export its PNG.
+
 ## Screens (same routes and roles as the web)
 
 | Web route | Android | Roles |
